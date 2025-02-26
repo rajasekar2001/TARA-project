@@ -39,13 +39,8 @@ def validate_mobile_no(value):
         raise serializers.ValidationError(_("Mobile number must contain only digits."))
     if not (10 <= len(value) <= 15):
         raise serializers.ValidationError(_("Mobile number must be between 10 to 15 digits."))
-    
-    # Check if mobile number already exists
-    if BusinessPartner.objects.filter(mobile=value).exists():
-        raise serializers.ValidationError(_("This Mobile Number already exists, Please enter a different Number."))
-
     return value
-
+    
 # msme number validator
 def validate_msme_no(value):
     """Validate MSME (Udyog Aadhaar) number."""
@@ -92,25 +87,6 @@ class BusinessPartnerKYCSerializer(serializers.ModelSerializer):
             if fetched_ifsc:
                 validated_data["ifsc_code"] = fetched_ifsc
         return super().update(instance, validated_data)
-# class BusinessPartnerSerializer(serializers.ModelSerializer):
-#     """
-#     Serializer for BusinessPartner model with explicit fields and nested KYC details.
-#     """
-#     kyc_details = BusinessPartnerKYCSerializer(many=True, read_only=True, source='businesspartnerkyc_set')
-#     mobile = serializers.CharField(validators=[validate_mobile_no])
-#     alternate_mobile = serializers.CharField(validators=[validate_mobile_no], required=False, allow_blank=True)
-#     city = serializers.CharField(required=False, allow_blank=True)
-#     state = serializers.CharField(required=False, allow_blank=True)
-
-#     class Meta:
-#         model = BusinessPartner
-#         fields = [
-#             'id', 'bp_code', 'term', 'business_name', 'name', 'mobile', 'alternate_mobile',
-#             'landline', 'business_email', 'email', 'door_no', 'shop_no', 'complex_name',
-#             'building_name', 'street_name', 'area', 'pincode', 'city', 'state', 'location_guide',
-#             'kyc_details'
-#         ]
-
 class BusinessPartnerSerializer(serializers.ModelSerializer):
     """
     Serializer for BusinessPartner model with explicit fields and nested KYC details.
@@ -118,7 +94,9 @@ class BusinessPartnerSerializer(serializers.ModelSerializer):
     kyc_details = BusinessPartnerKYCSerializer(many=True, read_only=True, source='businesspartnerkyc_set')
     mobile = serializers.CharField(validators=[validate_mobile_no])
     alternate_mobile = serializers.CharField(validators=[validate_mobile_no], required=False, allow_blank=True)
-    
+    city = serializers.CharField(required=False, allow_blank=True)
+    state = serializers.CharField(required=False, allow_blank=True)
+
     class Meta:
         model = BusinessPartner
         fields = [
@@ -127,13 +105,23 @@ class BusinessPartnerSerializer(serializers.ModelSerializer):
             'building_name', 'street_name', 'area', 'pincode', 'city', 'state', 'location_guide',
             'kyc_details'
         ]
-    
+        
     def validate(self, data):
         mobile = data.get('mobile')
-        if BusinessPartner.objects.filter(mobile=mobile).exists():
-            raise serializers.ValidationError({"mobile": _("This Mobile Number already exists, Please enter a different Number.")})
-        return data
+        instance = self.instance  # Get the current object if updating
 
+        if mobile:
+            queryset = BusinessPartner.objects.filter(mobile=mobile)
+
+            # If updating, exclude the current record from the check
+            if instance:
+                queryset = queryset.exclude(id=instance.id)
+
+            # If another record exists with the same mobile, raise an error
+            if queryset.exists():
+                raise serializers.ValidationError({"mobile": _("This Mobile Number already exists, Please enter a different Number.")})
+
+        return data
 
     def create(self, validated_data):
         user = self.context.get('request').user if self.context.get('request') else None

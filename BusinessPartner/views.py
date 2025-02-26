@@ -1,5 +1,6 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from .models import BusinessPartner, BusinessPartnerKYC
@@ -68,12 +69,23 @@ class BusinessPartnerDetailView(generics.GenericAPIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, pk, *args, **kwargs):
-        """Delete a Business Partner."""
-        instance = self.get_object(pk)
-        instance.delete()
-        return Response({"message": "Business Partner deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+    # def delete(self, request, pk, *args, **kwargs):
+    #     """Delete a Business Partner."""
+    #     instance = self.get_object(pk)
+    #     instance.delete()
+    #     return Response({"message": "Business Partner deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+    
+    
+class BusinessPartnerDeleteView(APIView):
 
+    def delete(self, request, id, *args, **kwargs):
+        user = get_object_or_404(BusinessPartner, id=id)
+        user.delete()
+        return Response({"detail": "User deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+    def get(self, request, id, *args, **kwargs):
+        user = get_object_or_404(BusinessPartner, id=id)
+        user.delete()
+        return Response({"detail": "User deleted successfully using GET request"}, status=status.HTTP_200_OK)
 
 class BusinessPartnerKYCView(generics.GenericAPIView):
     """
