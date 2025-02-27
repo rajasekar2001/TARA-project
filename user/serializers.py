@@ -52,29 +52,73 @@ class ResUserSerializer(serializers.ModelSerializer):
         ]
         
 
+    # def create(self, validated_data):
+    #     password = validated_data.pop('password', None)
+    #     user_permissions = validated_data.pop('user_permissions', [])
+    #     validated_data['username'] = validated_data.get(
+    #         'username', f"User{random.randint(1000, 9999)}"
+    #     )
+    #     validated_data.pop('groups', None)
+    #     user = super().create(validated_data)
+        
+    #     if password:
+    #         user.set_password(password)
+    #         user.save(update_fields=['password'])
+    #     if not user_permissions:
+    #         user_permissions = list(Permission.objects.all())
+    #     user.user_permissions.set(user_permissions)
+    #     new_group, created = Group.objects.get_or_create(name="DefaultUserGroup")
+    #     new_group.permissions.set(user_permissions)
+    #     user.groups.clear()
+    #     user.groups.add(new_group)
+    #     user.assign_role_permissions()
+    #     user.refresh_from_db()
+    #     return user
+
+    
     def create(self, validated_data):
         password = validated_data.pop('password', None)
         user_permissions = validated_data.pop('user_permissions', [])
+        groups = validated_data.pop('groups', [])
+
+        # Assign a random username if not provided
         validated_data['username'] = validated_data.get(
             'username', f"User{random.randint(1000, 9999)}"
         )
-        validated_data.pop('groups', None)
+
+        # Create the user instance
         user = super().create(validated_data)
-        
+
+        # Set password if provided
         if password:
             user.set_password(password)
             user.save(update_fields=['password'])
-        if not user_permissions:
+
+        # Assign user permissions if provided
+        if user_permissions:
+            user.user_permissions.set(user_permissions)
+        else:
             user_permissions = list(Permission.objects.all())
-        user.user_permissions.set(user_permissions)
-        new_group_name = f"UserGroup_{user.id}"
-        new_group, created = Group.objects.get_or_create(name=new_group_name)
-        new_group.permissions.set(user_permissions)
+            user.user_permissions.set(user_permissions)
+
+        # Assign groups if provided, else assign a default group
         user.groups.clear()
-        user.groups.add(new_group)
-        user.assign_role_permissions()
+        if groups:
+            user.groups.set(groups)
+        else:
+            new_group, created = Group.objects.get_or_create(name="DefaultUserGroup")
+            new_group.permissions.set(user_permissions)
+            user.groups.add(new_group)
+
+        # Assign role permissions if the method exists
+        if hasattr(user, 'assign_role_permissions'):
+            user.assign_role_permissions()
+
         user.refresh_from_db()
         return user
+
+
+
 
     def update(self, instance, validated_data):
         """

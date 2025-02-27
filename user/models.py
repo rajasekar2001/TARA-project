@@ -82,7 +82,7 @@ class ResUser(AbstractUser):
 
     # Relationship with Django Groups for RBAC
     groups = models.ManyToManyField(Group, related_name="custom_users", blank=True)
-    user_permissions = models.ManyToManyField(Permission, related_name="custom_user_permissions", blank=True)
+    user_permissions = models.ManyToManyField(Permission, blank=True)
 
     def soft_delete(self):
         """Marks the user as soft deleted."""
