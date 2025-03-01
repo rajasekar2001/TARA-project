@@ -150,3 +150,4 @@ class BusinessPartnerKYCDetailView(generics.GenericAPIView):
         instance = self.get_object(pk)
         instance.delete()
         return Response({"message": "Business Partner KYC deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+

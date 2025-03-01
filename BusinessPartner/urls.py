@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import BusinessPartnerView, BusinessPartnerDetailView, BusinessPartnerKYCView, BusinessPartnerDeleteView
+from .views import BusinessPartnerView, BusinessPartnerDetailView, BusinessPartnerKYCView, BusinessPartnerDeleteView, BusinessPartnerKYCDetailView
 
 urlpatterns = [
     path('BusinessPartner/create', BusinessPartnerView.as_view(), name='BusinessPartner-create'), # Handles POST (create)
@@ -10,4 +10,6 @@ urlpatterns = [
     # BusinessPartner KYC validation
     path('BusinessPartnerKYC/create', BusinessPartnerKYCView.as_view(), name='BusinessPartnerKYC-create'),
     path('BusinessPartnerKYC/list', BusinessPartnerKYCView.as_view(), name='BusinessPartnerKYC-list'),
+    path('BusinessPartnerKYC/detail/<int:pk>/', BusinessPartnerKYCDetailView.as_view(), name='BusinessPartner-detail'),  # Fix: Use correct view
+
 ]

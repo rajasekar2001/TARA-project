@@ -27,29 +27,29 @@ class ResUserSerializer(serializers.ModelSerializer):
             'updated_at': {'read_only': True}
         }
 
-    # def get_permissions(self, obj):
-    #     """
-    #     Dynamically fetch the permissions assigned to the user.
-    #     """
-    #     return [
-    #         {'codename': perm.codename, 'name': perm.name, 'granted': perm in obj.user_permissions.all()}
-    #         for perm in Permission.objects.all()
-    #     ]
-    
-    
     def get_permissions(self, obj):
         """
-        Dynamically fetch the permissions assigned to the user, including both direct and group-based permissions.
+        Dynamically fetch the permissions assigned to the user.
         """
-        user_permissions = set(obj.user_permissions.all())
-        group_permissions = set(Permission.objects.filter(group__in=obj.groups.all()))
-        
-        all_permissions = user_permissions | group_permissions
-        
         return [
-            {'codename': perm.codename, 'name': perm.name}
-            for perm in all_permissions
+            {'codename': perm.codename, 'name': perm.name, 'granted': perm in obj.user_permissions.all()}
+            for perm in Permission.objects.all()
         ]
+    
+    
+    # def get_permissions(self, obj):
+    #     """
+    #     Dynamically fetch the permissions assigned to the user, including both direct and group-based permissions.
+    #     """
+    #     user_permissions = set(obj.user_permissions.all())
+    #     group_permissions = set(Permission.objects.filter(group__in=obj.groups.all()))
+        
+    #     all_permissions = user_permissions | group_permissions
+        
+    #     return [
+    #         {'codename': perm.codename, 'name': perm.name}
+    #         for perm in all_permissions
+    #     ]
         
 
     # def create(self, validated_data):
@@ -75,33 +75,33 @@ class ResUserSerializer(serializers.ModelSerializer):
     #     user.refresh_from_db()
     #     return user
 
-    
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['permissions'] = self.get_permissions(instance)
+        return data
+
     def create(self, validated_data):
         password = validated_data.pop('password', None)
         user_permissions = validated_data.pop('user_permissions', [])
         groups = validated_data.pop('groups', [])
 
-        # Assign a random username if not provided
         validated_data['username'] = validated_data.get(
             'username', f"User{random.randint(1000, 9999)}"
         )
 
-        # Create the user instance
         user = super().create(validated_data)
 
-        # Set password if provided
         if password:
             user.set_password(password)
             user.save(update_fields=['password'])
 
-        # Assign user permissions if provided
         if user_permissions:
             user.user_permissions.set(user_permissions)
         else:
             user_permissions = list(Permission.objects.all())
             user.user_permissions.set(user_permissions)
 
-        # Assign groups if provided, else assign a default group
         user.groups.clear()
         if groups:
             user.groups.set(groups)
@@ -110,7 +110,6 @@ class ResUserSerializer(serializers.ModelSerializer):
             new_group.permissions.set(user_permissions)
             user.groups.add(new_group)
 
-        # Assign role permissions if the method exists
         if hasattr(user, 'assign_role_permissions'):
             user.assign_role_permissions()
 
