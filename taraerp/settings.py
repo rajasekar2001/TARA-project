@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-pyn1p6y1f6scj8ofy89oydj!24z$wd1c85vc**^(!tc=o6gg@)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['tara-33x2.onrender.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['tara-ithu.onrender.com', 'localhost', '127.0.0.1']
 
 
 # Application definition
