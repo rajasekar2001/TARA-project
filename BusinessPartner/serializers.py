@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import BusinessPartner, BusinessPartnerKYC,fetch_ifsc_code
 import re
 from django.utils.translation import gettext_lazy as _
+from rest_framework.exceptions import ValidationError
 
 def validate_pan_number(value):
     """
@@ -64,8 +65,7 @@ class BusinessPartnerKYCSerializer(serializers.ModelSerializer):
     class Meta:
         model = BusinessPartnerKYC
         fields = [
-            'id', 'bp_code', 'bis_no', 'gst_no', 'msme_no', 'pan_card_image', 'pan_no', 'tan_no', 'aadhar_front_image',
-            'aadhar_back_image', 'aadhar_no', 'bank_name', 'account_name', 'account_no',
+            'bis_no', 'bis_attachment', 'gst_no', 'gst_attachment', 'msme_no', 'msme_attachment', 'pan_no', 'pan_attachment', 'tan_no', 'tan_attachment', 'image', 'name', 'aadhar_no', 'aadhar_attach', 'bank_name', 'account_name', 'account_no',
             'ifsc_code', 'branch', 'bank_city', 'bank_state', 'note'
         ]
 
@@ -96,19 +96,23 @@ class BusinessPartnerSerializer(serializers.ModelSerializer):
     alternate_mobile = serializers.CharField(validators=[validate_mobile_no], required=False, allow_blank=True)
     city = serializers.CharField(required=False, allow_blank=True)
     state = serializers.CharField(required=False, allow_blank=True)
-
+    # class Meta:
+    #     model = BusinessPartner
+    #     fields = '__all__'
     class Meta:
         model = BusinessPartner
         fields = [
-            'id', 'bp_code', 'term', 'business_name', 'name', 'mobile', 'alternate_mobile',
-            'landline', 'business_email', 'email', 'door_no', 'shop_no', 'complex_name',
-            'building_name', 'street_name', 'area', 'pincode', 'city', 'state', 'location_guide',
+            'bp_code', 'term', 'business_name', 'full_name', 'mobile', 'alternate_mobile',
+            'landline', 'alternate_landline', 'email', 'business_email', 'refered_by', 'mobile', 'more', 'door_no', 'shop_no', 'complex_name',
+            'building_name', 'street_name', 'area', 'pincode', 'city', 'state', 'map_location', 'location_guide',
             'kyc_details'
         ]
+        read_only_fields = ['status'] 
+        
         
     def validate(self, data):
         mobile = data.get('mobile')
-        instance = self.instance  # Get the current object if updating
+        instance = self.instance 
 
         if mobile:
             queryset = BusinessPartner.objects.filter(mobile=mobile)
@@ -129,6 +133,28 @@ class BusinessPartnerSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("You do not have permission to create a Business Partner.")
         validated_data['user_id'] = user
         return super().create(validated_data)
+    
+    
+    # def create(self, validated_data):
+    #     email = validated_data.get('business_email')
+    #     if email and BusinessPartner.objects.filter(business_email=email).exists():
+    #         raise ValidationError({"business_email": "A Business Partner with this email already exists."})
+        
+    #     user = self.context.get('request').user if self.context.get('request') else None
+    #     if user is None or user.role_name not in ["super_admin", "admin", "Project Owner", "Super User"]:
+    #         raise serializers.ValidationError("You do not have permission to create a Business Partner.")
+        
+    #     validated_data['user_id'] = user
+    #     return super().create(validated_data)
+    
+    
+    
+    
+    # def create(self, validated_data):
+    #     email = validated_data.get('business_email')
+    #     if BusinessPartner.objects.filter(business_email=email).exists():
+    #         raise ValidationError({"business_email": "A Business Partner with this email already exists."})
+    #     return super().create(validated_data)
 
     def update(self, instance, validated_data):
         for attr, value in validated_data.items():

@@ -1,13 +1,17 @@
 from rest_framework import generics, status, response
 from rest_framework.exceptions import NotFound
 from .models import Order
+from rest_framework import viewsets, permissions
 from user.models import ResUser as user
 from .serializers import OrderSerializer, OrderUpdateSerializer, BackSellerOrderUpdateSerializer
 from .models import current_user, filter_queryset
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+
 
 # Helper function to check if user role is valid
-def is_valid_user_role(user):
+def is_valid_user_role(user): 
     """
     Check if the user's role is one of the allowed roles:
     'admin', 'staff', 'seller', 'customer'.
@@ -123,15 +127,187 @@ class AssignToBackSellerOrderAPI(generics.GenericAPIView):
 
         return response.Response({"detail": "Unauthorized or invalid role"}, status=status.HTTP_403_FORBIDDEN)
 
+# class OrderAPI(generics.GenericAPIView):
+#     serializer_class = OrderSerializer
+#     queryset = Order.objects.all()
+
+#     def get_user_and_type(self, request):
+#         if not request.user.is_authenticated:
+#             return None, None  # Or raise an authentication error
+#         return current_user(request)
+
+#     def get_filtered_queryset(self, user, user_type):
+#         """
+#         Filters the queryset based on the user type.
+#         """
+#         return filter_queryset(user, user_type)
+
+#     def is_valid_user_role(self, user):
+#         """
+#         Check if the user's role is one of the allowed roles:
+#         'admin', 'staff', 'seller', 'customer'.
+#         """
+#         valid_roles = ['admin', 'staff', 'seller', 'customer']
+#         return user.role_name in valid_roles
+
+#     def post(self, request):
+#         """
+#         Create a new order.
+#         """
+#         user, user_type = self.get_user_and_type(request)
+        
+#         # Check if the user role is valid before proceeding with order creation
+#         if not self.is_valid_user_role(user):
+#             return response.Response(
+#                 {"error": "You do not have permission to create orders."},
+#                 status=status.HTTP_403_FORBIDDEN
+#             )
+        
+#         self.queryset = self.get_filtered_queryset(user, user_type)
+#         serializer = self.serializer_class(data=request.data, context={'request': request})
+#         serializer.is_valid(raise_exception=True)
+
+#         # Check for duplicate order by order_no
+#         order_no = serializer.validated_data.get('order_no')
+#         if Order.objects.filter(order_no=order_no).exists():
+#             return response.Response(
+#                 {"error": "An order with this order_no already exists"},
+#                 status=status.HTTP_400_BAD_REQUEST,
+#             )
+        
+# # Ensure default state is 'draft'
+#         serializer.validated_data['state'] = 'draft'
+
+#         # Create the order and link it to the user
+#         order = serializer.save()
+#         return response.Response(
+#             self.serializer_class(order).data, status=status.HTTP_201_CREATED
+#         )
+
+#     def get(self, request, id=None):
+#         """
+#         Retrieve one or multiple orders.
+#         """
+#         user, user_type = self.get_user_and_type(request)
+#         self.queryset = self.get_filtered_queryset(user, user_type)
+
+#         if id:
+#             try:
+#                 order = self.queryset.get(id=id)
+#             except Order.DoesNotExist:
+#                 raise NotFound("Order not found")
+#             serializer = self.serializer_class(order)
+#             return response.Response(serializer.data, status=status.HTTP_200_OK)
+#         else:
+#             orders = self.queryset
+#             serializer = self.serializer_class(orders, many=True)
+#             return response.Response(serializer.data, status=status.HTTP_200_OK)
+
+#     def put(self, request, id):
+#         """
+#         Update an order's details.
+#         """
+#         user, user_type = self.get_user_and_type(request)
+#         self.queryset = self.get_filtered_queryset(user, user_type)
+
+#         try:
+#             order = self.queryset.get(id=id)
+#         except Order.DoesNotExist:
+#             raise NotFound("Order not found")
+
+#         serializer = self.serializer_class(order, data=request.data, partial=True)
+#         serializer.is_valid(raise_exception=True)
+#         serializer.save()
+
+#         return response.Response(serializer.data, status=status.HTTP_200_OK)
+
+#     def delete(self, request, id):
+#         """
+#         Delete an order.
+#         """
+#         user, user_type = self.get_user_and_type(request)
+#         self.queryset = self.get_filtered_queryset(user, user_type)
+
+#         try:
+#             order = self.queryset.get(id=id)
+#         except Order.DoesNotExist:
+#             raise NotFound("Order not found")
+
+#         order.delete()
+#         return response.Response(
+#             {"message": "Order deleted successfully"}, status=status.HTTP_204_NO_CONTENT
+#         )
+
+
+
+# class OrderAPI(generics.GenericAPIView):
+#     serializer_class = OrderSerializer
+#     queryset = Order.objects.all()
+
+#     def get_user_and_type(self, request):
+#         if not request.user.is_authenticated:
+#             return None, None  # Ensure we return None when the user is unauthenticated
+#         return request.user, request.user.role_name  # Return user and their role
+
+#     def get_filtered_queryset(self, user, user_type):
+#         """
+#         Filters the queryset based on the user type.
+#         """
+#         return filter_queryset(user, user_type)
+
+#     def is_valid_user_role(self, user):
+#         """
+#         Check if the user's role is one of the allowed roles:
+#         'admin', 'staff', 'seller', 'customer'.
+#         """
+#         if user is None:
+#             return False  # Prevent NoneType error
+#         valid_roles = ['admin', 'staff', 'seller', 'customer']
+#         return user.role_name in valid_roles
+
+#     def post(self, request):
+#         """
+#         Create a new order.
+#         """
+#         user, user_type = self.get_user_and_type(request)
+
+#         # Validate user
+#         if user is None or not self.is_valid_user_role(user):
+#             return response.Response(
+#                 {"error": "You do not have permission to create orders."},
+#                 status=status.HTTP_403_FORBIDDEN
+#             )
+
+#         self.queryset = self.get_filtered_queryset(user, user_type)
+#         serializer = self.serializer_class(data=request.data, context={'request': request})
+#         serializer.is_valid(raise_exception=True)
+
+#         # Check for duplicate order by order_no
+#         order_no = serializer.validated_data.get('order_no')
+#         if Order.objects.filter(order_no=order_no).exists():
+#             return response.Response(
+#                 {"error": "An order with this order_no already exists"},
+#                 status=status.HTTP_400_BAD_REQUEST,
+#             )
+
+#         # Ensure default state is 'draft'
+#         serializer.validated_data['state'] = 'draft'
+
+#         # Create the order and link it to the user
+#         order = serializer.save()
+#         return response.Response(
+#             self.serializer_class(order).data, status=status.HTTP_201_CREATED
+#         )
+
 class OrderAPI(generics.GenericAPIView):
     serializer_class = OrderSerializer
     queryset = Order.objects.all()
+    
 
     def get_user_and_type(self, request):
-        """
-        Retrieve the current user and their type.
-        """
-        return current_user(request)
+        if not request.user.is_authenticated:
+            return None, None  # Ensure we return None when the user is unauthenticated
+        return request.user, request.user.role_name  # Return user and their role
 
     def get_filtered_queryset(self, user, user_type):
         """
@@ -144,6 +320,8 @@ class OrderAPI(generics.GenericAPIView):
         Check if the user's role is one of the allowed roles:
         'admin', 'staff', 'seller', 'customer'.
         """
+        if user is None:
+            return False  # Prevent NoneType error
         valid_roles = ['admin', 'staff', 'seller', 'customer']
         return user.role_name in valid_roles
 
@@ -152,15 +330,25 @@ class OrderAPI(generics.GenericAPIView):
         Create a new order.
         """
         user, user_type = self.get_user_and_type(request)
-        
-        # Check if the user role is valid before proceeding with order creation
+
+        # Check authentication
+        if user is None:
+            return response.Response(
+                {"error": "Authentication required."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Check role permission
         if not self.is_valid_user_role(user):
             return response.Response(
                 {"error": "You do not have permission to create orders."},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
+        # Apply filtering based on user type
         self.queryset = self.get_filtered_queryset(user, user_type)
+
+        # Validate the request data
         serializer = self.serializer_class(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
 
@@ -171,66 +359,62 @@ class OrderAPI(generics.GenericAPIView):
                 {"error": "An order with this order_no already exists"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
-# Ensure default state is 'draft'
+
+        # Ensure default state is 'draft'
         serializer.validated_data['state'] = 'draft'
 
-        # Create the order and link it to the user
+        # Create and save the order
         order = serializer.save()
+
         return response.Response(
             self.serializer_class(order).data, status=status.HTTP_201_CREATED
         )
 
-    def get(self, request, id=None):
-        """
-        Retrieve one or multiple orders.
-        """
-        user, user_type = self.get_user_and_type(request)
-        self.queryset = self.get_filtered_queryset(user, user_type)
 
-        if id:
-            try:
-                order = self.queryset.get(id=id)
-            except Order.DoesNotExist:
-                raise NotFound("Order not found")
-            serializer = self.serializer_class(order)
-            return response.Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            orders = self.queryset
-            serializer = self.serializer_class(orders, many=True)
-            return response.Response(serializer.data, status=status.HTTP_200_OK)
+class CreateOrderAPI(generics.CreateAPIView):
+    serializer_class = OrderSerializer
+    queryset = Order.objects.all()
+    permission_classes = [IsAuthenticated]  # Ensure only authenticated users can create orders
 
-    def put(self, request, id):
-        """
-        Update an order's details.
-        """
-        user, user_type = self.get_user_and_type(request)
-        self.queryset = self.get_filtered_queryset(user, user_type)
+    def post(self, request):
+        current_user = request.user
 
         try:
-            order = self.queryset.get(id=id)
-        except Order.DoesNotExist:
-            raise NotFound("Order not found")
+            obj = user.objects.get(id=current_user.id)
+            if is_valid_user_role(obj):  # Checking if the user role is valid
+                serializer = self.serializer_class(data=request.data)
+                serializer.is_valid(raise_exception=True)
+                serializer.save(user=obj)  # Save order with the logged-in user
+                return response.Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        serializer = self.serializer_class(order, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+            return response.Response({"detail": "Unauthorized role"}, status=status.HTTP_403_FORBIDDEN)
 
-        return response.Response(serializer.data, status=status.HTTP_200_OK)
+        except user.DoesNotExist:
+            return response.Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        
+# class OrderView(APIView):
+#     def is_valid_user_role(self, user):
+#         """
+#         Check if the user's role is one of the allowed roles:
+#         'admin', 'staff', 'seller', 'customer'.
+#         """
+#         valid_roles = ['admin', 'staff', 'seller', 'customer']
+#         return user.role_name in valid_roles
 
-    def delete(self, request, id):
-        """
-        Delete an order.
-        """
-        user, user_type = self.get_user_and_type(request)
-        self.queryset = self.get_filtered_queryset(user, user_type)
 
-        try:
-            order = self.queryset.get(id=id)
-        except Order.DoesNotExist:
-            raise NotFound("Order not found")
+class OrderViewSet(viewsets.ModelViewSet):
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated]  # Ensure only authenticated users can access
 
-        order.delete()
-        return response.Response(
-            {"message": "Order deleted successfully"}, status=status.HTTP_204_NO_CONTENT
-        )
+    def perform_create(self, serializer):
+        """Automatically assign the logged-in user to the order"""
+        serializer.save(user=self.request.user)  # Assign the authenticated user
+
+    def create(self, request, *args, **kwargs):
+        """Custom create method to ensure user authentication"""
+        if not request.user.is_authenticated:
+            return Response({'error': 'Authentication required'}, status=401)
+
+        return super().create(request, *args, **kwargs)

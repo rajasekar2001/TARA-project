@@ -4,9 +4,12 @@ from django.utils.translation import gettext_lazy as _
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 from django.utils.timezone import now
-from user.models import ResUser  # Ensure correct import of user model
+from django.db.models.functions import Lower
+from user.models import ResUser
+from urllib.parse import quote
 import requests
 import logging
+from django.db.models import Q
 import re
 
 logger = logging.getLogger(__name__)
@@ -74,18 +77,38 @@ def validate_msme_no(value):
     return value  # Return value if validation passes
 
 class BusinessPartner(models.Model):
+    
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['business_email'],
+                name='unique_email_ci'
+            )
+        ]
+
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('freezed', 'Freezed'),
+    ]
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='approved')
     user_id = models.ForeignKey(ResUser, on_delete=models.CASCADE, related_name='BusinessPartner', blank=True, null=True)
-    bp_code = models.CharField(max_length=50, unique=True)
-    term = models.CharField(max_length=100, blank=True, null=True)
+    bp_code = models.CharField(max_length=50, unique=True, blank=False, null=False)
+    term = models.CharField(max_length=100, blank=False, null=False)
     business_name = models.CharField(max_length=255)
 
     # Contact Details
-    name = models.CharField(max_length=255)
-    mobile = models.CharField(max_length=15, validators=[validate_mobile_no], verbose_name="Mobile No", unique=True)
-    alternate_mobile = models.CharField(max_length=15, validators=[validate_mobile_no], blank=True, null=True,unique=True)
+    full_name = models.CharField(max_length=255, blank=False, null=False)
+    mobile = models.CharField(max_length=15, validators=[validate_mobile_no], verbose_name="Mobile No", unique=True, blank=False, null=False)
+    alternate_mobile = models.CharField(max_length=15, validators=[validate_mobile_no], blank=True, null=True,unique=False)
     landline = models.CharField(max_length=15, blank=True, null=True)
-    business_email = models.EmailField(max_length=255, blank=True, null=True, unique=True)
-    email = models.EmailField(max_length=255, blank=True, null=True,unique=True)
+    alternate_landline = models.CharField(max_length=15, blank=True, null=True)
+    email = models.EmailField(max_length=255, blank=False, null=False,unique=True)
+    business_email = models.EmailField(unique=True, blank=False, null=False)
+    refered_by = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
+    mobile = models.CharField(max_length=15, validators=[validate_mobile_no], verbose_name="Mobile No", unique=True, blank=False, null=False)
+    more = models.TextField(blank=True, null=True)
 
     # Address Details
     door_no = models.CharField(max_length=50, blank=True, null=True)
@@ -94,11 +117,16 @@ class BusinessPartner(models.Model):
     building_name = models.CharField(max_length=255, blank=True, null=True)
     street_name = models.CharField(max_length=255, blank=True, null=True)
     area = models.CharField(max_length=255, blank=True, null=True)
-    pincode = models.CharField(max_length=10, blank=True, null=True)
+    pincode = models.CharField(max_length=10, blank=False, null=False)
     city = models.CharField(max_length=100, blank=True, null=True)
     state = models.CharField(max_length=100, blank=True, null=True)
+    map_location = models.CharField(max_length=500, null=True, blank=True)
     location_guide = models.TextField(blank=True, null=True)
-
+    
+    
+    def __str__(self):
+        return self.name
+    
     def save(self, *args, **kwargs):
         if self.user_id and self.user_id.role_name not in ROLE_CHOICES:
             raise PermissionDenied("You do not have permission to create a Business Partner.")
@@ -108,34 +136,47 @@ class BusinessPartner(models.Model):
         return f"{self.bp_code} - {self.business_name}"
 
 class BusinessPartnerKYC(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('freezed', 'Freezed'),
+    ]
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='approved')
     bp_code = models.ForeignKey(
         BusinessPartner, on_delete=models.CASCADE, related_name='kyc_details'
     )  # One-to-Many Relationship 
 
     # KYC Details
-    bis_no = models.CharField(max_length=50, blank=True, null=True)
-    gst_no = models.CharField(max_length=50,validators=[validate_gst_number], blank=True, null=True)
-    msme_no = models.CharField(max_length=50, validators=[validate_msme_no], blank=True, null=True)
-    pan_card_image = models.ImageField(upload_to='pan_card', blank=True, null=True)
-    pan_no = models.CharField(max_length=10, blank=True, null=True, validators=[validate_pan_number])  # Apply the validator here    
-    tan_no = models.CharField(max_length=10, validators=[validate_pan_number], blank=True, null=True)
+    bis_no = models.CharField(max_length=50, blank=False, null=False)
+    bis_attachment = models.FileField(upload_to='attachments/', null=False, blank=False)
+    gst_no = models.CharField(max_length=50,validators=[validate_gst_number], blank=False, null=False)
+    gst_attachment = models.FileField(upload_to='attachments/', null=False, blank=False)
+    msme_no = models.CharField(max_length=50, validators=[validate_msme_no], blank=False, null=False)
+    msme_attachment = models.FileField(upload_to='attachments/', null=False, blank=False)
+    pan_no = models.CharField(max_length=10, blank=False, null=False, validators=[validate_pan_number])  
+    pan_attachment = models.FileField(upload_to='attachments/', null=False, blank=False)
+    tan_no = models.CharField(max_length=10, validators=[validate_pan_number], blank=False, null=False)
+    tan_attachment = models.FileField(upload_to='attachments/', null=False, blank=False)
+    image = models.ImageField(upload_to='kyc/business_partner/', blank=False, null=False)
 
     # Aadhar Details
-    aadhar_no = models.CharField(max_length=12, validators=[validate_aadhar_no],blank=True, null=True)
-    aadhar_front_image = models.ImageField(upload_to='kyc/aadhar/', blank=True, null=True)
-    aadhar_back_image = models.ImageField(upload_to='kyc/aadhar/', blank=True, null=True)
-    
+    name = models.CharField(max_length=255, blank=False, null=False)
+    aadhar_no = models.CharField(max_length=12, validators=[validate_aadhar_no],blank=False, null=False)
+    aadhar_attach = models.FileField(upload_to='attachments/', null=False, blank=False)   
 
     # Bank Details
-    bank_name = models.CharField(max_length=255, blank=True, null=True)
+    bank_name = models.CharField(max_length=255, blank=False, null=False)
     account_name = models.CharField(max_length=255, blank=True, null=True)
-    account_no = models.CharField(max_length=50, blank=True, null=True)
-    branch = models.CharField(max_length=255, blank=True, null=True)
-    ifsc_code = models.CharField(max_length=20,validators=[validate_ifsc_code], blank=True, null=True)
+    account_no = models.CharField(max_length=50, blank=False, null=False)
+    branch = models.CharField(max_length=255, blank=False, null=False)
+    ifsc_code = models.CharField(max_length=20,validators=[validate_ifsc_code], blank=False, null=False)
     bank_city = models.CharField(max_length=100, blank=True, null=True)
     bank_state = models.CharField(max_length=100, blank=True, null=True)
-
     note = models.TextField(blank=True, null=True)
+    
+
+def __str__(self):
+        return self.name
 
 def save(self, *args, **kwargs):
         if not self.ifsc_code and self.bank_name and self.branch:
@@ -189,3 +230,27 @@ def fetch_location_pre_save(sender, instance, **kwargs):
         city, state = fetch_location_from_pincode(instance.pincode)
         instance.city = city
         instance.state = state
+        
+        
+def get_map_url(self):
+        """Generate Google Maps URL based on address details"""
+        address_parts = filter(None, [self.door_no, self.street_name, self.area, self.city, self.state, self.pincode])
+        address = ", ".join(address_parts)
+        encoded_address = quote(address)
+        return f"https://www.google.com/maps/search/?api=1&query={encoded_address}"
+
+def save(self, *args, **kwargs):
+        if self.user_id and self.user_id.role_name not in ROLE_CHOICES:
+            raise PermissionDenied("You do not have permission to create a Business Partner.")
+
+        # Automatically generate map link before saving
+        if not self.map:
+            self.map = self.get_map_url()
+
+        super().save(*args, **kwargs)
+
+def __str__(self):
+        return f"{self.bp_code} - {self.business_name}"
+    
+    
+    

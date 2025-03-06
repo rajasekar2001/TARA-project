@@ -38,30 +38,73 @@ class BusinessPartnerView(generics.GenericAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# class BusinessPartnerDetailView(generics.GenericAPIView):
+#     """
+#     API for a single Business Partner:
+#     - GET: Retrieve a Business Partner by ID.
+#     - PUT: Update a Business Partner.
+#     - DELETE: Delete a Business Partner.
+#     """
+#     queryset = BusinessPartner.objects.all()
+#     serializer_class = BusinessPartnerSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def get_object(self, pk):
+#         """Helper method to get the object or return 404."""
+#         return get_object_or_404(BusinessPartner, pk=pk)
+
+#     def get(self, request, pk, *args, **kwargs):
+#         """Retrieve a Business Partner by ID (No POST form visible)."""
+#         instance = self.get_object(pk)
+#         serializer = self.get_serializer(instance)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+
+#     def put(self, request, pk, *args, **kwargs):
+#         """Update an existing Business Partner."""
+#         instance = self.get_object(pk)
+#         serializer = self.get_serializer(instance, data=request.data, partial=True)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_200_OK)
+
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# class BusinessPartnerDeleteView(APIView):
+
+#     def delete(self, request, id, *args, **kwargs):
+#         user = get_object_or_404(BusinessPartner, id=id)
+#         user.delete()
+#         return Response({"detail": "User deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+#     def get(self, request, id, *args, **kwargs):
+#         user = get_object_or_404(BusinessPartner, id=id)
+#         user.delete()
+#         return Response({"detail": "User deleted successfully using GET request"}, status=status.HTTP_200_OK)
+
+
+
 class BusinessPartnerDetailView(generics.GenericAPIView):
     """
     API for a single Business Partner:
-    - GET: Retrieve a Business Partner by ID.
+    - GET: Retrieve a Business Partner by bp_code.
     - PUT: Update a Business Partner.
-    - DELETE: Delete a Business Partner.
     """
     queryset = BusinessPartner.objects.all()
     serializer_class = BusinessPartnerSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_object(self, pk):
-        """Helper method to get the object or return 404."""
-        return get_object_or_404(BusinessPartner, pk=pk)
+    def get_object(self, bp_code):
+        """Helper method to get the object or return 404 using bp_code."""
+        return get_object_or_404(BusinessPartner, bp_code=bp_code)
 
-    def get(self, request, pk, *args, **kwargs):
-        """Retrieve a Business Partner by ID (No POST form visible)."""
-        instance = self.get_object(pk)
+    def get(self, request, bp_code, *args, **kwargs):
+        """Retrieve a Business Partner by bp_code."""
+        instance = self.get_object(bp_code)
         serializer = self.get_serializer(instance)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def put(self, request, pk, *args, **kwargs):
-        """Update an existing Business Partner."""
-        instance = self.get_object(pk)
+    def put(self, request, bp_code, *args, **kwargs):
+        """Update an existing Business Partner using bp_code."""
+        instance = self.get_object(bp_code)
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -69,23 +112,25 @@ class BusinessPartnerDetailView(generics.GenericAPIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    # def delete(self, request, pk, *args, **kwargs):
-    #     """Delete a Business Partner."""
-    #     instance = self.get_object(pk)
-    #     instance.delete()
-    #     return Response({"message": "Business Partner deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
-    
-    
-class BusinessPartnerDeleteView(APIView):
 
-    def delete(self, request, id, *args, **kwargs):
-        user = get_object_or_404(BusinessPartner, id=id)
+class BusinessPartnerDeleteView(APIView):
+    """
+    API to delete a Business Partner using bp_code.
+    """
+
+    def delete(self, request, bp_code, *args, **kwargs):
+        """Delete a Business Partner by bp_code."""
+        user = get_object_or_404(BusinessPartner, bp_code=bp_code)
         user.delete()
         return Response({"detail": "User deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
-    def get(self, request, id, *args, **kwargs):
-        user = get_object_or_404(BusinessPartner, id=id)
+
+    def get(self, request, bp_code, *args, **kwargs):
+        """Handle deletion using GET request (Not recommended)."""
+        user = get_object_or_404(BusinessPartner, bp_code=bp_code)
         user.delete()
         return Response({"detail": "User deleted successfully using GET request"}, status=status.HTTP_200_OK)
+
+
 
 class BusinessPartnerKYCView(generics.GenericAPIView):
     """
@@ -114,10 +159,47 @@ class BusinessPartnerKYCView(generics.GenericAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# class BusinessPartnerKYCDetailView(generics.GenericAPIView):
+#     """
+#     API for a single Business Partner KYC:
+#     - GET: Retrieve a KYC entry by ID.
+#     - PUT: Update a KYC entry.
+#     - DELETE: Delete a KYC entry.
+#     """
+#     queryset = BusinessPartnerKYC.objects.all()
+#     serializer_class = BusinessPartnerKYCSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def get_object(self, pk):
+#         """Helper method to get the object or return 404."""
+#         return get_object_or_404(BusinessPartnerKYC, pk=pk)
+
+#     def get(self, request, pk, *args, **kwargs):
+#         """Retrieve a Business Partner KYC entry."""
+#         instance = self.get_object(pk)
+#         serializer = self.get_serializer(instance)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+
+#     def put(self, request, pk, *args, **kwargs):
+#         """Update an existing Business Partner KYC entry."""
+#         instance = self.get_object(pk)
+#         serializer = self.get_serializer(instance, data=request.data, partial=True)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_200_OK)
+
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+#     def delete(self, request, pk, *args, **kwargs):
+#         """Delete a Business Partner KYC entry."""
+#         instance = self.get_object(pk)
+#         instance.delete()
+#         return Response({"message": "Business Partner KYC deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
 class BusinessPartnerKYCDetailView(generics.GenericAPIView):
     """
     API for a single Business Partner KYC:
-    - GET: Retrieve a KYC entry by ID.
+    - GET: Retrieve a KYC entry by bp_code.
     - PUT: Update a KYC entry.
     - DELETE: Delete a KYC entry.
     """
@@ -125,19 +207,19 @@ class BusinessPartnerKYCDetailView(generics.GenericAPIView):
     serializer_class = BusinessPartnerKYCSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_object(self, pk):
-        """Helper method to get the object or return 404."""
-        return get_object_or_404(BusinessPartnerKYC, pk=pk)
+    def get_object(self, bp_code):
+        """Helper method to get the object or return 404 using bp_code."""
+        return get_object_or_404(BusinessPartnerKYC, bp_code=bp_code)
 
-    def get(self, request, pk, *args, **kwargs):
-        """Retrieve a Business Partner KYC entry."""
-        instance = self.get_object(pk)
+    def get(self, request, bp_code, *args, **kwargs):
+        """Retrieve a Business Partner KYC entry using bp_code."""
+        instance = self.get_object(bp_code)
         serializer = self.get_serializer(instance)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def put(self, request, pk, *args, **kwargs):
-        """Update an existing Business Partner KYC entry."""
-        instance = self.get_object(pk)
+    def put(self, request, bp_code, *args, **kwargs):
+        """Update an existing Business Partner KYC entry using bp_code."""
+        instance = self.get_object(bp_code)
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -145,9 +227,10 @@ class BusinessPartnerKYCDetailView(generics.GenericAPIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, pk, *args, **kwargs):
-        """Delete a Business Partner KYC entry."""
-        instance = self.get_object(pk)
+    def delete(self, request, bp_code, *args, **kwargs):
+        """Delete a Business Partner KYC entry using bp_code."""
+        instance = self.get_object(bp_code)
         instance.delete()
         return Response({"message": "Business Partner KYC deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
-
+    
+    

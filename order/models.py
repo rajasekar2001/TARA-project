@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from user.models import ResUser as user
-
+from django.contrib.auth.models import AbstractUser
 
 def get_order_no():
     last_order = Order.objects.order_by('-id').first()
@@ -49,6 +49,10 @@ def filter_queryset(user, user_type):
 #     else:
 #         raise Exception("User not authenticated")
         
+        
+class User(AbstractUser):
+    role_name = models.CharField(max_length=20, choices=[('admin', 'Admin'), ('superadmin', 'Super Admin'), ('keyuser', 'Key User'), ('user', 'User')], default='user')
+
 class Order(models.Model):
     SIZE_CHOICES = [
         ('Large', 'Large'),
@@ -99,34 +103,84 @@ class Order(models.Model):
         ('oz', 'Ounce'),
         ('lb', 'Pound'),
     ]
-    STATE_CHOICES=[('draft','Draft'),('pending','Pending'),('approved','Approved'),('accepted','accepted'),('progress','in progress'),('rejected','Rejected')]
-    user_id = models.ForeignKey(user, on_delete=models.CASCADE, related_name='orders', blank=True, null=True)
-    order_no = models.CharField(max_length=100, unique=True, blank=True)
+    ORDER_TYPES = [
+        ('online', 'Online'),
+        ('offline', 'Offline'),
+        ('preorder', 'Preorder'),
+    ]
+    DTYPE_CHOICES = [
+        ('standard', 'Standard'),
+        ('express', 'Express'),
+        ('custom', 'Custom'),
+    ]
+    STATE_CHOICES=[
+        ('draft','Draft'),
+        ('pending','Pending'),
+        ('approved','Approved'),
+        ('accepted','accepted'),
+        ('progress','in progress'),
+        ('rejected','Rejected')
+    ]
+    OPEN_CLOSE_CHOICES = [
+        ('open', 'Open'),
+        ('close', 'Close'),
+    ]
+    
+    user = models.ForeignKey(user, on_delete=models.CASCADE)
+    order_image = models.ImageField(upload_to='order_images/', blank=True, null=True)
+    bp_code = models.CharField(max_length=20, unique=True, blank=True, null=True)  # Business Partner Code
+    name = models.CharField(max_length=255)
+    reference_no = models.CharField(max_length=20, unique=True)
+    order_date = models.DateTimeField(auto_now_add=True)
+    due_date = models.DateField()
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, blank=True, null=True)
+    order_type = models.CharField(max_length=10, choices=ORDER_TYPES, default='online')
     quantity = models.CharField(max_length=50, blank=True, null=True)
     weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    weight_unit = models.CharField(max_length=2, choices=WEIGHT_UNIT_CHOICES, blank=True, null=True)
-    size = models.CharField(max_length=50, choices=SIZE_CHOICES, blank=True, null=True)
-    stone = models.CharField(max_length=50, choices=STONE_CHOICES, blank=True, null=True)
-    rodium = models.CharField(max_length=50, choices=RODIUM_CHOICES, blank=True, null=True)
-    hallmark = models.CharField(max_length=50, choices=HALLMARK_CHOICES, blank=True, null=True)
-    screw = models.CharField(max_length=50, choices=SCREW_CHOICES, blank=True, null=True)
-    hook = models.CharField(max_length=50, choices=HOOK_CHOICES, blank=True, null=True)
+    dtype = models.CharField(max_length=10, choices=DTYPE_CHOICES, default='standard')
+    branch_code = models.CharField(max_length=10, unique=True)
+    product = models.CharField(max_length=100)
+    design = models.CharField(max_length=100)
+    vendor_design = models.CharField(max_length=100)
+    barcoded_quality = models.BooleanField(default=False)  # True if quality checked with barcode
+    supplied = models.IntegerField(default=0)  # Number of supplied items
+    balance = models.IntegerField(default=0)  # Remaining balance
+    assigned_by = models.CharField(max_length=100, default="Unknown")
     narration = models.TextField(blank=True, null=True)
-    order_image = models.ImageField(upload_to='order_images/', blank=True, null=True)
-    due_date = models.DateField()
-    state = models.CharField(max_length=50, choices=STATE_CHOICES, default='pending')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    start_date = models.DateField(blank=True, null=True, verbose_name=_("Start Date"))
-    end_date = models.DateField(blank=True, null=True, verbose_name=_("End Date"))
-    text_assign_user = models.TextField(blank=True, null=True)
+    note = models.TextField(blank=True, null=True)
+    sub_brand = models.CharField(max_length=100, blank=True, null=True)
+    make = models.CharField(max_length=100, blank=True, null=True)
+    work_style = models.CharField(max_length=100, blank=True, null=True)
+    form = models.CharField(max_length=100, blank=True, null=True)
+    finish = models.CharField(max_length=100, blank=True, null=True)
+    theme = models.CharField(max_length=100, blank=True, null=True)
+    collection = models.CharField(max_length=100, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    assign_remarks = models.TextField(blank=True, null=True)
+    screw = models.CharField(max_length=50, choices=SCREW_CHOICES, blank=True, null=True)
+    polish = models.CharField(max_length=100, blank=True, null=True)
+    metal_colour = models.CharField(max_length=50, blank=True, null=True)
+    purity = models.CharField(max_length=50, blank=True, null=True)
+    stone = models.CharField(max_length=50, choices=STONE_CHOICES, blank=True, null=True)
+    hallmark = models.CharField(max_length=50, choices=HALLMARK_CHOICES, blank=True, null=True)
+    rodium = models.CharField(max_length=50, choices=RODIUM_CHOICES, blank=True, null=True)
+    enamel = models.CharField(max_length=50, blank=True, null=True)
+    hook = models.CharField(max_length=50, choices=HOOK_CHOICES, blank=True, null=True)
+    size = models.CharField(max_length=50, choices=SIZE_CHOICES, blank=True, null=True)
+    open_close = models.CharField(max_length=10, choices=OPEN_CLOSE_CHOICES, default='open')
+    length = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    hbt_class = models.CharField(max_length=50, blank=True, null=True)
+    console_id = models.CharField(max_length=50, blank=True, null=True)
+    tolerance_from = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    tolerance_to = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    
 
     def save(self, *args, **kwargs):
         if not self.order_no:
             self.order_no = get_order_no()
+        if not self.bp_code:
+            self.bp_code = f"BP{self.order_no}"  
         super().save(*args, **kwargs)
-
 
     def __str__(self):
         weight_display = f"{self.weight}{self.weight_unit}" if self.weight and self.weight_unit else "No weight specified"
