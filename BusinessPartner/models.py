@@ -145,7 +145,7 @@ class BusinessPartnerKYC(models.Model):
         ('freezed', 'Freezed'),
         ('revoked', 'Revoked'),
     ]
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='approved')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES)
     bp_code = models.ForeignKey(
         BusinessPartner, on_delete=models.CASCADE, related_name='kyc_details'
     )  # One-to-Many Relationship 
@@ -254,19 +254,62 @@ def save(self, *args, **kwargs):
             self.map = self.get_map_url()
 
         super().save(*args, **kwargs)
-
+        
+        
+def update_status(self):
+        if self.revoked:
+            self.status = "Revoked"
+        elif self.freezed:
+            self.status = "Freezed"
+        elif all([
+                self.bp_code, self.bis_no, self.bis_attachment, self.gst_no, self.gst_attachment,
+                self.msme_no, self.msme_attachment, self.pan_no, self.pan_attachment,
+                self.tan_no, self.tan_attachment, self.image, self.name, self.aadhar_no,
+                self.aadhar_attach, self.bank_name, self.account_name, self.account_no,
+                self.ifsc_code, self.branch, self.bank_city, self.bank_state, self.note
+            ]):  # Check if all fields are filled
+            self.status = "Approved"
+        else:
+            self.status = "Pending"
+        self.save()
 
 def freeze(self):
-        """Freeze the business partner"""
-        self.freezed = True
-        self.status = 'freezed'
-        self.save()
+        self.is_frozen = True
+        self.update_status()
 
 def revoke(self):
-        """Revoke the business partner"""
-        self.revoked = True
-        self.status = 'revoked'
-        self.save()
+        self.is_revoked = True
+        self.update_status()
+
+def save(self, *args, **kwargs):
+        self.update_status()
+        super().save(*args, **kwargs)
+        
+        
+# def save(self, *args, **kwargs):
+#         # Prevent auto-approval if already frozen or revoked
+#         if self.status not in ['freezed', 'revoked']:
+#             required_fields = [
+#                 self.bp_code, self.bis_no, self.bis_attachment, self.gst_no, self.gst_attachment,
+#                 self.msme_no, self.msme_attachment, self.pan_no, self.pan_attachment,
+#                 self.tan_no, self.tan_attachment, self.image, self.name, self.aadhar_no,
+#                 self.aadhar_attach, self.bank_name, self.account_name, self.account_no,
+#                 self.ifsc_code, self.branch, self.bank_city, self.bank_state, self.note
+#             ]
+#             self.status = 'approved' if all(required_fields) else 'pending'
+
+
+# def freeze(self):
+#         """Freeze the business partner"""
+#         self.freezed = True
+#         self.status = 'freezed'
+#         self.save()
+
+# def revoke(self):
+#         """Revoke the business partner"""
+#         self.revoked = True
+#         self.status = 'revoked'
+#         self.save()
 
 
 def __str__(self):

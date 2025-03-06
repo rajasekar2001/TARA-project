@@ -146,9 +146,9 @@ class Order(models.Model):
     product = models.CharField(max_length=100)
     design = models.CharField(max_length=100)
     vendor_design = models.CharField(max_length=100)
-    barcoded_quality = models.BooleanField(default=False)  # True if quality checked with barcode
-    supplied = models.IntegerField(default=0)  # Number of supplied items
-    balance = models.IntegerField(default=0)  # Remaining balance
+    barcoded_quality = models.BooleanField(default=False)
+    supplied = models.IntegerField(default=0)
+    balance = models.IntegerField(default=0)
     assigned_by = models.CharField(max_length=100, default="Unknown")
     narration = models.TextField(blank=True, null=True)
     note = models.TextField(blank=True, null=True)

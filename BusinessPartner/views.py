@@ -5,8 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from .models import BusinessPartner, BusinessPartnerKYC
 from .serializers import BusinessPartnerSerializer, BusinessPartnerKYCSerializer
-from rest_framework.decorators import api_view
-
+from rest_framework import viewsets
 
 
 class BusinessPartnerView(generics.GenericAPIView):
@@ -308,6 +307,10 @@ class BusinessPartnerKycRevoke(APIView):
             {'message': 'Business Partner revoked successfully'},
             status=status.HTTP_200_OK
         )
+        
+class YourModelViewSet(viewsets.ModelViewSet):
+    queryset = BusinessPartnerKYC.objects.all()
+    serializer_class = BusinessPartnerKYCSerializer
         
         
         

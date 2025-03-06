@@ -69,7 +69,7 @@ class BusinessPartnerKYCSerializer(serializers.ModelSerializer):
             'msme_no', 'msme_attachment', 'pan_no', 'pan_attachment', 
             'tan_no', 'tan_attachment', 'image', 'name', 'aadhar_no', 
             'aadhar_attach', 'bank_name', 'account_name', 'account_no',
-            'ifsc_code', 'branch', 'bank_city', 'bank_state', 'note',
+            'ifsc_code', 'branch', 'bank_city', 'bank_state', 'note', 'status',
             
         ]
 
@@ -165,6 +165,39 @@ class BusinessPartnerSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+    
+    
+    
+class BusinessPartnerKYCSerializer(serializers.ModelSerializer):
+    status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BusinessPartnerKYC
+        fields = [
+            'bp_code', 'bis_no', 'bis_attachment', 'gst_no', 'gst_attachment', 
+            'msme_no', 'msme_attachment', 'pan_no', 'pan_attachment', 
+            'tan_no', 'tan_attachment', 'image', 'name', 'aadhar_no', 
+            'aadhar_attach', 'bank_name', 'account_name', 'account_no',
+            'ifsc_code', 'branch', 'bank_city', 'bank_state', 'note', 'status',
+            
+        ]
+
+    def get_status(self, obj):
+        if obj.revoked:
+            return 'Revoked'
+        if obj.freezed:
+            return 'Freezed'
+        if all([
+    obj.bp_code, obj.bis_no, obj.bis_attachment, obj.gst_no, obj.gst_attachment,
+    obj.msme_no, obj.msme_attachment, obj.pan_no, obj.pan_attachment,
+    obj.tan_no, obj.tan_attachment, obj.image, obj.name, obj.aadhar_no,
+    obj.aadhar_attach, obj.bank_name, obj.account_name, obj.account_no,
+    obj.ifsc_code, obj.branch, obj.bank_city, obj.bank_state
+]):
+
+           
+            return 'Approved'
+        return 'Pending'
 
 
 
