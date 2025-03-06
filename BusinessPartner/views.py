@@ -5,6 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from .models import BusinessPartner, BusinessPartnerKYC
 from .serializers import BusinessPartnerSerializer, BusinessPartnerKYCSerializer
+from rest_framework.decorators import api_view
+
 
 
 class BusinessPartnerView(generics.GenericAPIView):
@@ -207,19 +209,19 @@ class BusinessPartnerKYCDetailView(generics.GenericAPIView):
     serializer_class = BusinessPartnerKYCSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_object(self, bp_code):
+    def get_object(self, bis_no):
         """Helper method to get the object or return 404 using bp_code."""
-        return get_object_or_404(BusinessPartnerKYC, bp_code=bp_code)
+        return get_object_or_404(BusinessPartnerKYC, bis_no=bis_no)
 
-    def get(self, request, bp_code, *args, **kwargs):
+    def get(self, request, bis_no, *args, **kwargs):
         """Retrieve a Business Partner KYC entry using bp_code."""
-        instance = self.get_object(bp_code)
+        instance = self.get_object(bis_no)
         serializer = self.get_serializer(instance)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def put(self, request, bp_code, *args, **kwargs):
+    def put(self, request, bis_no, *args, **kwargs):
         """Update an existing Business Partner KYC entry using bp_code."""
-        instance = self.get_object(bp_code)
+        instance = self.get_object(bis_no)
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -227,10 +229,145 @@ class BusinessPartnerKYCDetailView(generics.GenericAPIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, bp_code, *args, **kwargs):
+    def delete(self, request, bis_no, *args, **kwargs):
         """Delete a Business Partner KYC entry using bp_code."""
-        instance = self.get_object(bp_code)
+        instance = self.get_object(bis_no)
         instance.delete()
         return Response({"message": "Business Partner KYC deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
     
     
+# @api_view(['POST'])
+# def freeze_business_partner(request, bis_no):
+#     try:
+#         partner = BusinessPartnerKYC.objects.get(bis_no=bis_no)
+#         partner.freezed = True
+#         partner.save()
+#         return Response({'message': 'Business Partner freezed successfully'}, status=status.HTTP_200_OK)
+#     except BusinessPartner.DoesNotExist:
+#         return Response({'error': 'Business Partner not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+# @api_view(['POST'])
+# def revoke_business_partner(request, bis_no):
+#     try:
+#         partner = BusinessPartnerKYC.objects.get(bis_no=bis_no)
+#         partner.freezed = False
+#         partner.save()
+#         return Response({'message': 'Business Partner revoked successfully'}, status=status.HTTP_200_OK)
+#     except BusinessPartner.DoesNotExist:
+#         return Response({'error': 'Business Partner not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+class BusinessPartnerKycFreeze(APIView):
+    """API to retrieve and freeze a Business Partner KYC entry."""
+
+    def get_object(self, bis_no):
+        return get_object_or_404(BusinessPartnerKYC, bis_no=bis_no)
+
+    def get(self, request, bis_no, *args, **kwargs):
+        """Retrieve Business Partner KYC details before freezing."""
+        instance = self.get_object(bis_no)
+        serializer = BusinessPartnerKYCSerializer(instance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request, bis_no, *args, **kwargs):
+        """Freeze the Business Partner KYC entry."""
+        partner = self.get_object(bis_no)
+        partner.freezed = True
+        partner.save()
+        serializer = BusinessPartnerKYCSerializer(partner)
+        return Response(
+            # {'message': 'Business Partner freezed successfully', 'data': serializer.data},
+            {'message': 'Business Partner freezed successfully'},
+            status=status.HTTP_200_OK
+        )
+
+
+class BusinessPartnerKycRevoke(APIView):
+    """API to retrieve and revoke (unfreeze) a Business Partner KYC entry."""
+
+    def get_object(self, bis_no):
+        return get_object_or_404(BusinessPartnerKYC, bis_no=bis_no)
+
+    def get(self, request, bis_no, *args, **kwargs):
+        """Retrieve Business Partner KYC details before revoking."""
+        instance = self.get_object(bis_no)
+        serializer = BusinessPartnerKYCSerializer(instance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request, bis_no, *args, **kwargs):
+        """Revoke (Unfreeze) the Business Partner KYC entry."""
+        partner = self.get_object(bis_no)
+        partner.freezed = False
+        partner.save()
+        serializer = BusinessPartnerKYCSerializer(partner)
+        return Response(
+            # {'message': 'Business Partner revoked successfully', 'data': serializer.data},
+            {'message': 'Business Partner revoked successfully'},
+            status=status.HTTP_200_OK
+        )
+        
+        
+        
+        
+        
+# Below method super_admin have authority to freeze and revoke
+# admin have authority to just view the freeze and revoke data
+
+
+# class IsSuperAdminOrReadOnly(permissions.BasePermission):
+#     """
+#     Custom permission to allow only super admins to modify data,
+#     while admins can only read (GET).
+#     """
+
+#     def has_permission(self, request, view):
+#         if request.method == "GET":
+#             return request.user.is_authenticated and request.user.role == "admin"
+#         return request.user.is_authenticated and request.user.role == "super_admin"
+
+
+# class BusinessPartnerKycFreeze(APIView):
+#     """API to retrieve and freeze a Business Partner KYC entry."""
+    
+#     permission_classes = [IsSuperAdminOrReadOnly]  # Apply permission
+
+#     def get_object(self, bis_no):
+#         return get_object_or_404(BusinessPartnerKYC, bis_no=bis_no)
+
+#     def get(self, request, bis_no, *args, **kwargs):
+#         """Retrieve Business Partner KYC details before freezing."""
+#         instance = self.get_object(bis_no)
+#         serializer = BusinessPartnerKYCSerializer(instance)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+
+#     def post(self, request, bis_no, *args, **kwargs):
+#         """Freeze the Business Partner KYC entry (Only Super Admin)."""
+#         partner = self.get_object(bis_no)
+#         partner.freezed = True
+#         partner.save()
+#         return Response({'message': 'Business Partner freezed successfully'}, status=status.HTTP_200_OK)
+
+
+# class BusinessPartnerKycRevoke(APIView):
+#     """API to retrieve and revoke (unfreeze) a Business Partner KYC entry."""
+    
+#     permission_classes = [IsSuperAdminOrReadOnly]  # Apply permission
+
+#     def get_object(self, bis_no):
+#         return get_object_or_404(BusinessPartnerKYC, bis_no=bis_no)
+
+#     def get(self, request, bis_no, *args, **kwargs):
+#         """Retrieve Business Partner KYC details before revoking."""
+#         instance = self.get_object(bis_no)
+#         serializer = BusinessPartnerKYCSerializer(instance)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+
+#     def post(self, request, bis_no, *args, **kwargs):
+#         """Revoke (Unfreeze) the Business Partner KYC entry (Only Super Admin)."""
+#         partner = self.get_object(bis_no)
+#         partner.freezed = False
+#         partner.save()
+#         return Response({'message': 'Business Partner revoked successfully'}, status=status.HTTP_200_OK)

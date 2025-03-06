@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import BusinessPartnerView, BusinessPartnerDetailView, BusinessPartnerKYCView, BusinessPartnerDeleteView, BusinessPartnerKYCDetailView
+from .views import BusinessPartnerView, BusinessPartnerDetailView, BusinessPartnerKYCView, BusinessPartnerDeleteView, BusinessPartnerKYCDetailView, BusinessPartnerKycFreeze, BusinessPartnerKycRevoke
 
 urlpatterns = [
     path('BusinessPartner/create', BusinessPartnerView.as_view(), name='BusinessPartner-create'), 
@@ -12,6 +12,9 @@ urlpatterns = [
     # BusinessPartner KYC validation
     path('BusinessPartnerKYC/create', BusinessPartnerKYCView.as_view(), name='BusinessPartnerKYC-create'),
     path('BusinessPartnerKYC/list', BusinessPartnerKYCView.as_view(), name='BusinessPartnerKYC-list'),
-    path('BusinessPartnerKYC/detail/<str:bp_code>/', BusinessPartnerKYCDetailView.as_view(), name='BusinessPartner-detail'), 
+    path('BusinessPartnerKYC/detail/<str:bis_no>/', BusinessPartnerKYCDetailView.as_view(), name='BusinessPartner-detail'), 
+    path('BusinessPartner/delete/<str:bis_no>/', BusinessPartnerKYCDetailView.as_view(), name='BusinessPartner-delete'),
+    path('BusinessPartnerKYC/freeze/<str:bis_no>/', BusinessPartnerKycFreeze.as_view(), name='freeze_business_partner'),
+    path('BusinessPartnerKYC/revoke/<str:bis_no>/', BusinessPartnerKycRevoke.as_view(), name='revoke_business_partner'),
 
 ]

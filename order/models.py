@@ -2,6 +2,8 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from user.models import ResUser as user
 from django.contrib.auth.models import AbstractUser
+from BusinessPartner.models import BusinessPartner
+from django.utils.timezone import now 
 
 def get_order_no():
     last_order = Order.objects.order_by('-id').first()
@@ -126,12 +128,14 @@ class Order(models.Model):
         ('close', 'Close'),
     ]
     
-    user = models.ForeignKey(user, on_delete=models.CASCADE)
-    order_image = models.ImageField(upload_to='order_images/', blank=True, null=True)
-    bp_code = models.CharField(max_length=20, unique=True, blank=True, null=True)  # Business Partner Code
+    # user = models.ForeignKey(user, on_delete=models.CASCADE)
+    order_image = models.ImageField(upload_to='order_images/', verbose_name="Add Images", blank=True, null=True)
+    # bp_code = models.CharField(max_length=20, unique=True, blank=True, null=True) 
+    bp_code = models.ForeignKey(BusinessPartner, on_delete=models.CASCADE, null=True, blank=True)
+
     name = models.CharField(max_length=255)
     reference_no = models.CharField(max_length=20, unique=True)
-    order_date = models.DateTimeField(auto_now_add=True)
+    order_date = models.DateTimeField()    
     due_date = models.DateField()
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, blank=True, null=True)
     order_type = models.CharField(max_length=10, choices=ORDER_TYPES, default='online')
@@ -185,3 +189,9 @@ class Order(models.Model):
     def __str__(self):
         weight_display = f"{self.weight}{self.weight_unit}" if self.weight and self.weight_unit else "No weight specified"
         return f"Order {self.order_no}-{self.category}-{weight_display}"
+    
+    def __str__(self):
+        return f"Order {self.order_no} - {self.bp_code.bp_code}"
+    
+    def __str__(self):
+        return f"Order {self.order_no} - {self.order_date}"

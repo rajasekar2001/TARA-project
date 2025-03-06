@@ -10,12 +10,12 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = [
-            'id', 'bp_code', 'name', 'reference_no', 'order_date', 'due_date', 'category', 'order_type',
+            'order_image', 'bp_code', 'name', 'reference_no', 'order_date', 'due_date', 'category', 'order_type',
             'quantity', 'weight', 'dtype', 'branch_code', 'product', 'design', 'vendor_design', 'barcoded_quality',
             'supplied', 'balance', 'assigned_by', 'narration', 'note', 'sub_brand', 'make', 'work_style', 'form',
             'finish', 'theme', 'collection', 'description', 'assign_remarks', 'screw', 'polish', 'metal_colour',
             'purity', 'stone', 'hallmark', 'rodium', 'enamel', 'hook', 'size', 'open_close', 'length', 'hbt_class',
-            'console_id', 'tolerance_from', 'tolerance_to', 'order_image'
+            'console_id', 'tolerance_from', 'tolerance_to'
         ]
         # read_only_fields = [ 'bp_code', 'order_date']
 

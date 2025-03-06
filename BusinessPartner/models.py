@@ -91,12 +91,15 @@ class BusinessPartner(models.Model):
         ('pending', 'Pending'),
         ('approved', 'Approved'),
         ('freezed', 'Freezed'),
+        ('revoked', 'Revoked'),
     ]
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='approved')
     user_id = models.ForeignKey(ResUser, on_delete=models.CASCADE, related_name='BusinessPartner', blank=True, null=True)
     bp_code = models.CharField(max_length=50, unique=True, blank=False, null=False)
     term = models.CharField(max_length=100, blank=False, null=False)
     business_name = models.CharField(max_length=255)
+    freezed = models.BooleanField(default=False)
+    revoked = models.BooleanField(default=False)
 
     # Contact Details
     full_name = models.CharField(max_length=255, blank=False, null=False)
@@ -140,6 +143,7 @@ class BusinessPartnerKYC(models.Model):
         ('pending', 'Pending'),
         ('approved', 'Approved'),
         ('freezed', 'Freezed'),
+        ('revoked', 'Revoked'),
     ]
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='approved')
     bp_code = models.ForeignKey(
@@ -148,20 +152,20 @@ class BusinessPartnerKYC(models.Model):
 
     # KYC Details
     bis_no = models.CharField(max_length=50, blank=False, null=False)
-    bis_attachment = models.FileField(upload_to='attachments/', null=False, blank=False)
+    bis_attachment = models.ImageField(upload_to='attachments/', blank=False, null=False) 
     gst_no = models.CharField(max_length=50,validators=[validate_gst_number], blank=False, null=False)
-    gst_attachment = models.FileField(upload_to='attachments/', null=False, blank=False)
+    gst_attachment = models.ImageField(upload_to='attachments/', blank=False, null=False) 
     msme_no = models.CharField(max_length=50, validators=[validate_msme_no], blank=False, null=False)
-    msme_attachment = models.FileField(upload_to='attachments/', null=False, blank=False)
+    msme_attachment = models.ImageField(upload_to='attachments/', blank=False, null=False) 
     pan_no = models.CharField(max_length=10, blank=False, null=False, validators=[validate_pan_number])  
-    pan_attachment = models.FileField(upload_to='attachments/', null=False, blank=False)
+    pan_attachment = models.ImageField(upload_to='attachments/', blank=False, null=False) 
     tan_no = models.CharField(max_length=10, validators=[validate_pan_number], blank=False, null=False)
-    tan_attachment = models.FileField(upload_to='attachments/', null=False, blank=False)
+    tan_attachment = models.ImageField(upload_to='attachments/', blank=False, null=False)
     image = models.ImageField(upload_to='kyc/business_partner/', blank=False, null=False)
 
     # Aadhar Details
     name = models.CharField(max_length=255, blank=False, null=False)
-    aadhar_no = models.CharField(max_length=12, validators=[validate_aadhar_no],blank=False, null=False)
+    aadhar_no = models.CharField(max_length=12, validators=[validate_aadhar_no], default=list, blank=False, null=False)
     aadhar_attach = models.FileField(upload_to='attachments/', null=False, blank=False)   
 
     # Bank Details
@@ -173,6 +177,8 @@ class BusinessPartnerKYC(models.Model):
     bank_city = models.CharField(max_length=100, blank=True, null=True)
     bank_state = models.CharField(max_length=100, blank=True, null=True)
     note = models.TextField(blank=True, null=True)
+    freezed = models.BooleanField(default=False)
+    revoked = models.BooleanField(default=False)
     
 
 def __str__(self):
@@ -248,6 +254,20 @@ def save(self, *args, **kwargs):
             self.map = self.get_map_url()
 
         super().save(*args, **kwargs)
+
+
+def freeze(self):
+        """Freeze the business partner"""
+        self.freezed = True
+        self.status = 'freezed'
+        self.save()
+
+def revoke(self):
+        """Revoke the business partner"""
+        self.revoked = True
+        self.status = 'revoked'
+        self.save()
+
 
 def __str__(self):
         return f"{self.bp_code} - {self.business_name}"

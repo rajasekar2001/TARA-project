@@ -65,8 +65,12 @@ class BusinessPartnerKYCSerializer(serializers.ModelSerializer):
     class Meta:
         model = BusinessPartnerKYC
         fields = [
-            'bis_no', 'bis_attachment', 'gst_no', 'gst_attachment', 'msme_no', 'msme_attachment', 'pan_no', 'pan_attachment', 'tan_no', 'tan_attachment', 'image', 'name', 'aadhar_no', 'aadhar_attach', 'bank_name', 'account_name', 'account_no',
-            'ifsc_code', 'branch', 'bank_city', 'bank_state', 'note'
+            'bp_code', 'bis_no', 'bis_attachment', 'gst_no', 'gst_attachment', 
+            'msme_no', 'msme_attachment', 'pan_no', 'pan_attachment', 
+            'tan_no', 'tan_attachment', 'image', 'name', 'aadhar_no', 
+            'aadhar_attach', 'bank_name', 'account_name', 'account_no',
+            'ifsc_code', 'branch', 'bank_city', 'bank_state', 'note',
+            
         ]
 
     def create(self, validated_data):
@@ -161,3 +165,6 @@ class BusinessPartnerSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+
+
+
