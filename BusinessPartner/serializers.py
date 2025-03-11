@@ -107,7 +107,7 @@ class BusinessPartnerSerializer(serializers.ModelSerializer):
         model = BusinessPartner
         fields = [
             'bp_code', 'term', 'business_name', 'full_name', 'mobile', 'alternate_mobile',
-            'landline', 'alternate_landline', 'email', 'business_email', 'refered_by', 'mobile', 'more', 'door_no', 'shop_no', 'complex_name',
+            'landline', 'alternate_landline', 'email', 'business_email', 'refered_by', 'referer_mobile', 'more', 'door_no', 'shop_no', 'complex_name',
             'building_name', 'street_name', 'area', 'pincode', 'city', 'state', 'map_location', 'location_guide',
             'kyc_details'
         ]

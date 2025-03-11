@@ -109,8 +109,9 @@ class BusinessPartner(models.Model):
     alternate_landline = models.CharField(max_length=15, blank=True, null=True)
     email = models.EmailField(max_length=255, blank=False, null=False,unique=True)
     business_email = models.EmailField(unique=True, blank=False, null=False)
-    refered_by = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
-    mobile = models.CharField(max_length=15, validators=[validate_mobile_no], verbose_name="Mobile No", unique=True, blank=False, null=False)
+    # refered_by = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
+    refered_by = models.TextField(blank=True, null=True)
+    referer_mobile = models.CharField(max_length=15,blank=True, null=True) 
     more = models.TextField(blank=True, null=True)
 
     # Address Details
