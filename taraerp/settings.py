@@ -51,7 +51,7 @@ INSTALLED_APPS = [
     'Admin',
     'SuperAdmin',
     'KeyUsers',
-    'Users'
+    'Users',
     'Craftsman',
     ]
 
