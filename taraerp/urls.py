@@ -26,12 +26,15 @@ urlpatterns = [
      path('notification/', include('notification.urls')),
      path('order/', include('order.urls')),
      path('orderitem/', include('orderitem.urls')),
-     path('payment/', include('payment.urls')),
      path('report/', include('report.urls')),
-     path('user/', include('user.urls')),
      path('product/', include('product.urls')),
      path('BusinessPartner/', include('BusinessPartner.urls')),
      path('inventory/', include('inventory.urls')),
+     path('Craftsman/', include('Craftsman.urls')),
+     path('KeyUsers/', include('KeyUsers.urls')),
+     path('SuperAdmin/', include('SuperAdmin.urls')),
+     path('Admin/', include('Admin.urls')),
+     path('Users/', include('Users.urls')),
      
 ]
 
