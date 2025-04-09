@@ -35,6 +35,7 @@ urlpatterns = [
      path('SuperAdmin/', include('SuperAdmin.urls')),
      path('Admin/', include('Admin.urls')),
      path('Users/', include('Users.urls')),
+    path('user/', include('user.urls')),
      
 ]
 
