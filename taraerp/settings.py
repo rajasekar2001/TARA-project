@@ -44,13 +44,15 @@ INSTALLED_APPS = [
     'notification',
     'order',
     'orderitem',
-    'payment',
     'report',
-    'user',
     'product',
     'BusinessPartner',
     'inventory',
-    # 'key_user',
+    'Admin',
+    'SuperAdmin',
+    'KeyUsers',
+    'Users'
+    'Craftsman',
     ]
 
 MIDDLEWARE = [
