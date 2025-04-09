@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'KeyUsers',
     'Users',
     'Craftsman',
+    'user',
     ]
 
 MIDDLEWARE = [
